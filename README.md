@@ -140,6 +140,26 @@ Resultado esperado:
 - 0 fallos
 - 0 errores
 
+## Despliegue En Railway
+
+1. Entra a `https://railway.app/`.
+2. Inicia sesion con GitHub.
+3. Crea un proyecto nuevo con `Deploy from GitHub repo`.
+4. Selecciona el repositorio `juanpinzon2007/Caballos`.
+5. Railway detectara el proyecto Maven.
+6. Si Railway pide comandos manuales, usa:
+
+```text
+Build Command: ./mvnw clean package -DskipTests
+Start Command: java -jar target/caballos-0.0.1-SNAPSHOT.jar
+```
+
+7. Espera a que termine el build.
+8. Abre la URL publica generada por Railway.
+
+Nota:
+La aplicacion ya fue configurada para usar `PORT`, que es el puerto que Railway inyecta en produccion.
+
 ## Metodologia De Solucion
 
 ### Analisis

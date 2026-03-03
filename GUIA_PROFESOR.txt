@@ -84,3 +84,4 @@ La solucion evidencia modelo de datos, estructuras, operadores y restricciones m
 Notas Finales
 - La aplicacion ya fue validada con pruebas automaticas.
 - Esta lista para subirse a GitHub y desplegarse en Railway.
+- La app ya esta configurada para usar el puerto `PORT` en Railway.
