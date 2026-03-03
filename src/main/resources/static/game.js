@@ -86,7 +86,11 @@
     function renderInitialTrack(resultado) {
         refs.track.innerHTML = resultado.caballos.map((caballo) => {
             const style = horseStyles[caballo.nombre];
-            const cells = [];
+            const cells = [`
+                <div class="lane-cell start" data-step="S">
+                    <div class="token-slot" data-horse="${caballo.nombre}" data-step="0"></div>
+                </div>
+            `];
 
             for (let step = 1; step <= resultado.meta; step += 1) {
                 cells.push(`
@@ -109,6 +113,10 @@
                 </article>
             `;
         }).join("");
+
+        resultado.caballos.forEach((caballo) => {
+            renderHorsePosition(caballo.nombre, 0, resultado.meta, false);
+        });
     }
 
     function renderLog(turnos) {
@@ -148,19 +156,15 @@
     }
 
     function renderHorsePosition(nombre, posicion, meta, moving) {
-        for (let step = 1; step <= meta; step += 1) {
+        for (let step = 0; step <= meta; step += 1) {
             const slot = document.querySelector(`[data-horse="${cssEscape(nombre)}"][data-step="${step}"]`);
             if (slot) {
                 slot.innerHTML = "";
             }
         }
 
-        if (posicion <= 0) {
-            updateProgressText(nombre, posicion, meta);
-            return;
-        }
-
-        const slot = document.querySelector(`[data-horse="${cssEscape(nombre)}"][data-step="${Math.min(posicion, meta)}"]`);
+        const visibleStep = posicion <= 0 ? 0 : Math.min(posicion, meta);
+        const slot = document.querySelector(`[data-horse="${cssEscape(nombre)}"][data-step="${visibleStep}"]`);
         if (!slot) {
             return;
         }

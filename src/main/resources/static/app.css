@@ -286,7 +286,7 @@ a {
 .lane {
     display: grid;
     gap: 8px;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(8, minmax(0, 1fr));
 }
 
 .lane-cell {
@@ -313,6 +313,10 @@ a {
 .lane-cell.finish {
     background: linear-gradient(180deg, #244c60, #163544);
     color: #fff;
+}
+
+.lane-cell.start {
+    background: linear-gradient(180deg, #f2d8b6, #e3bf90);
 }
 
 .horse-token {
