@@ -1,0 +1,86 @@
+JUEGO DE CARRERA DE CABALLOS CON CARTAS
+
+Resumen Del Proyecto
+Este proyecto es una aplicacion web desarrollada en Java con Spring Boot.
+Automatiza el juego de carrera de caballos usando una baraja francesa.
+Cada As representa un caballo y en cada turno solo se mueve el caballo del palo de la carta revelada.
+
+Mejoras Importantes De Esta Version
+- Interfaz visual profesional.
+- Simulacion animada por turnos.
+- Correccion del problema visual donde parecia que todos los caballos avanzaban al tiempo.
+- Historial detallado de cartas y movimientos.
+- Nueva carrera con un solo boton.
+- Documentacion integrada dentro de la aplicacion.
+
+Que Puede Revisar El Profesor
+1. Pagina principal del proyecto.
+2. Simulacion visual completa de la carrera.
+3. Movimiento exacto de un caballo por turno.
+4. Historial de movimientos.
+5. Ganador final.
+6. Documentacion metodologica.
+7. Pruebas automaticas.
+
+Rutas De La Aplicacion
+- http://localhost:8080/
+- http://localhost:8080/jugar
+- http://localhost:8080/documentacion
+- http://localhost:8080/api/juego
+
+Pasos Exactos Para Ejecutar En Windows
+1. Abrir PowerShell en la carpeta del proyecto.
+2. Ejecutar:
+
+$env:JAVA_HOME='C:\Program Files\JetBrains\IntelliJ IDEA 2025.3.3\jbr'
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+.\mvnw.cmd spring-boot:run
+
+3. Abrir en el navegador:
+http://localhost:8080/
+
+Como Probar Rapido
+1. Entrar a la pagina principal.
+2. Ir a /jugar.
+3. Verificar que la carrera se vea animada paso a paso.
+4. Confirmar que en cada turno solo cambia un caballo.
+5. Revisar la carta activa y el caballo en movimiento.
+6. Revisar el historial del lado inferior.
+7. Confirmar el ganador.
+8. Probar el boton "Nueva carrera".
+9. Probar la pagina /documentacion.
+
+Pruebas Automaticas
+Para ejecutar las pruebas:
+
+$env:JAVA_HOME='C:\Program Files\JetBrains\IntelliJ IDEA 2025.3.3\jbr'
+$env:Path="$env:JAVA_HOME\bin;$env:Path"
+.\mvnw.cmd test
+
+Resultado Esperado
+- 4 pruebas ejecutadas
+- 0 fallos
+- 0 errores
+
+Metodologia Aplicada
+Analisis:
+Se identificaron los componentes del problema: cartas, palos, caballos, posiciones, turnos y meta.
+
+Alternativas:
+Se considero una app de consola y una app web. Se eligio una app web por presentacion, claridad y facilidad de despliegue.
+
+Diseno:
+Se modelaron las clases Carta, Caballo, Palo, TurnoJuego y ResultadoJuego. Se uso una API interna para entregar el estado completo de la carrera.
+
+Implementacion:
+Se desarrollo la simulacion completa, una interfaz renovada, animacion por turnos y un historial detallado de cada movimiento.
+
+Pruebas:
+Se verifico el mazo de 52 cartas, la creacion de cuatro caballos y el ganador al alcanzar la meta.
+
+Conclusiones:
+La solucion evidencia modelo de datos, estructuras, operadores y restricciones mediante una aplicacion funcional y visualmente mas clara.
+
+Notas Finales
+- La aplicacion ya fue validada con pruebas automaticas.
+- Esta lista para subirse a GitHub y desplegarse en Railway.
