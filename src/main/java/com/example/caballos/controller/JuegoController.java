@@ -86,29 +86,29 @@ public class JuegoController {
                             <a class="brand" href="/">Caballos</a>
                             <nav class="topbar-actions">
                                 <a class="button button-ghost" href="/documentacion">Documentacion</a>
-                                <button class="button button-primary" id="reiniciarBtn" type="button">Nueva carrera</button>
+                                <button class="button button-primary" id="reiniciarBtn" type="button">Apostar de nuevo</button>
                             </nav>
                         </header>
 
                         <main class="game-layout">
                             <section class="hero hero-game">
                                 <div class="hero-copy">
-                                    <span class="eyebrow">Simulacion por turnos</span>
-                                    <h1>Carrera de caballos con cartas</h1>
-                                    <p class="lead">La carrera se anima carta por carta. Cada turno revela una carta del mazo y solo se mueve el caballo del palo correspondiente.</p>
+                                    <span class="eyebrow">Modo multiusuario</span>
+                                    <h1>Carrera de caballos con apuestas</h1>
+                                    <p class="lead">Registra usuarios con 1000 puntos iniciales, apuesta un valor variable y gana 5x cuando aciertes el caballo ganador.</p>
                                 </div>
                                 <div class="hero-panel status-panel">
                                     <div class="metric">
-                                        <span class="metric-label">Turno actual</span>
-                                        <strong id="turnoActual">0</strong>
+                                        <span class="metric-label">Usuario</span>
+                                        <strong id="usuarioNombre">Sin registro</strong>
                                     </div>
                                     <div class="metric">
-                                        <span class="metric-label">Carta activa</span>
-                                        <strong id="cartaActual">Esperando...</strong>
+                                        <span class="metric-label">Grupo</span>
+                                        <strong id="usuarioGrupo">-</strong>
                                     </div>
                                     <div class="metric">
-                                        <span class="metric-label">Caballo en movimiento</span>
-                                        <strong id="caballoActual">Esperando...</strong>
+                                        <span class="metric-label">Puntos</span>
+                                        <strong id="usuarioPuntos">0</strong>
                                     </div>
                                 </div>
                             </section>
@@ -117,7 +117,45 @@ public class JuegoController {
                                 <article class="glass-card race-card">
                                     <div class="section-head">
                                         <div>
-                                            <span class="mini-label">Pista</span>
+                                            <span class="mini-label">Registro y apuesta</span>
+                                            <h2>Control de jugador</h2>
+                                        </div>
+                                    </div>
+
+                                    <div class="control-grid">
+                                        <label for="nombreUsuario">Nombre de usuario</label>
+                                        <div class="inline-actions">
+                                            <input id="nombreUsuario" type="text" maxlength="60" placeholder="Ejemplo: AnaPerez">
+                                            <button class="button button-secondary" id="registrarBtn" type="button">Registrarse</button>
+                                        </div>
+
+                                        <label for="caballoApuesta">Caballo</label>
+                                        <select id="caballoApuesta">
+                                            <option>As de Corazones</option>
+                                            <option>As de Diamantes</option>
+                                            <option>As de Treboles</option>
+                                            <option>As de Picas</option>
+                                        </select>
+
+                                        <label for="puntosApuesta">Puntos a apostar</label>
+                                        <input id="puntosApuesta" type="number" min="1" step="1" value="100">
+
+                                        <label for="paquetesCompra">Comprar puntos (1000 por 10.000 COP)</label>
+                                        <div class="inline-actions">
+                                            <input id="paquetesCompra" type="number" min="1" step="1" value="1">
+                                            <button class="button button-ghost" id="comprarBtn" type="button">Comprar</button>
+                                        </div>
+
+                                        <div class="inline-actions">
+                                            <button class="button button-primary" id="apostarBtn" type="button">Iniciar apuesta</button>
+                                        </div>
+                                    </div>
+
+                                    <p id="mensajeSistema" class="system-message">Registra un usuario para comenzar.</p>
+
+                                    <div class="section-head">
+                                        <div>
+                                            <span class="mini-label">Animacion</span>
                                             <h2>Carrera en vivo</h2>
                                         </div>
                                         <div class="speed-control">
@@ -136,6 +174,18 @@ public class JuegoController {
                                     <span class="mini-label">Resumen</span>
                                     <h2>Estado de la carrera</h2>
                                     <div class="summary-stack">
+                                        <div class="summary-row">
+                                            <span>Turno actual</span>
+                                            <strong id="turnoActual">0</strong>
+                                        </div>
+                                        <div class="summary-row">
+                                            <span>Carta activa</span>
+                                            <strong id="cartaActual">Esperando...</strong>
+                                        </div>
+                                        <div class="summary-row">
+                                            <span>Caballo en movimiento</span>
+                                            <strong id="caballoActual">Esperando...</strong>
+                                        </div>
                                         <div class="summary-row">
                                             <span>Meta</span>
                                             <strong id="metaTexto">7 casillas</strong>
@@ -161,14 +211,14 @@ public class JuegoController {
                                 </article>
 
                                 <article class="glass-card">
-                                    <span class="mini-label">Reglas</span>
-                                    <h2>Como funciona</h2>
+                                    <span class="mini-label">Reglas de negocio</span>
+                                    <h2>Condiciones nuevas</h2>
                                     <ul class="clean-list clean-list-wide">
-                                        <li>Se crea y mezcla un mazo de 52 cartas.</li>
-                                        <li>Cada caballo es un As de un palo distinto.</li>
-                                        <li>En cada turno se revela una carta.</li>
-                                        <li>Solo se mueve el caballo del mismo palo que la carta.</li>
-                                        <li>Gana el primero que llegue a la posicion 7.</li>
+                                        <li>Registro de usuario con 1000 puntos iniciales.</li>
+                                        <li>Plataforma: maximo 4 grupos, 4 usuarios por grupo.</li>
+                                        <li>Apuesta variable por cada carrera.</li>
+                                        <li>Si aciertas: premio = puntos apostados x5.</li>
+                                        <li>Compra de puntos: 1000 puntos por 10.000 COP, sin limite.</li>
                                     </ul>
                                 </article>
                             </section>

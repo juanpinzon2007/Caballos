@@ -1,6 +1,14 @@
 spring:
   application:
     name: caballos
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/caballos}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
 
 server:
   port: ${PORT:8080}

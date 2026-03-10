@@ -1,15 +1,17 @@
 (function () {
     const horseStyles = {
-        "As de Corazones": { color: "#c23861", badge: "♥" },
-        "As de Diamantes": { color: "#d97706", badge: "♦" },
-        "As de Treboles": { color: "#2b7a4b", badge: "♣" },
-        "As de Picas": { color: "#164863", badge: "♠" }
+        "As de Corazones": { color: "#c23861", badge: "?" },
+        "As de Diamantes": { color: "#d97706", badge: "?" },
+        "As de Treboles": { color: "#2b7a4b", badge: "?" },
+        "As de Picas": { color: "#164863", badge: "?" }
     };
 
     const state = {
+        user: null,
         resultado: null,
         currentTurn: 0,
-        timerId: null
+        timerId: null,
+        lastBet: null
     };
 
     const refs = {
@@ -23,40 +25,191 @@
         metaTexto: document.getElementById("metaTexto"),
         winnerBadge: document.getElementById("winnerBadge"),
         velocidad: document.getElementById("velocidad"),
-        reiniciarBtn: document.getElementById("reiniciarBtn")
+        reiniciarBtn: document.getElementById("reiniciarBtn"),
+        registrarBtn: document.getElementById("registrarBtn"),
+        apostarBtn: document.getElementById("apostarBtn"),
+        comprarBtn: document.getElementById("comprarBtn"),
+        nombreUsuario: document.getElementById("nombreUsuario"),
+        caballoApuesta: document.getElementById("caballoApuesta"),
+        puntosApuesta: document.getElementById("puntosApuesta"),
+        paquetesCompra: document.getElementById("paquetesCompra"),
+        usuarioNombre: document.getElementById("usuarioNombre"),
+        usuarioGrupo: document.getElementById("usuarioGrupo"),
+        usuarioPuntos: document.getElementById("usuarioPuntos"),
+        mensajeSistema: document.getElementById("mensajeSistema")
     };
 
     if (!refs.track) {
         return;
     }
 
-    refs.reiniciarBtn.addEventListener("click", loadRace);
+    refs.reiniciarBtn.addEventListener("click", repetirApuesta);
+    refs.registrarBtn.addEventListener("click", registrarUsuario);
+    refs.apostarBtn.addEventListener("click", apostarDesdeFormulario);
+    refs.comprarBtn.addEventListener("click", comprarPuntos);
     refs.velocidad.addEventListener("change", () => {
         if (state.resultado) {
             restartAnimation();
         }
     });
 
-    loadRace();
+    setDefaultRaceState();
+    restaurarUsuario();
 
-    async function loadRace() {
+    async function restaurarUsuario() {
+        const userId = Number(localStorage.getItem("caballos.userId"));
+        if (!userId) {
+            setMessage("Registra un usuario para comenzar.");
+            return;
+        }
+
+        try {
+            const usuario = await apiRequest(`/api/usuarios/${userId}`);
+            aplicarUsuario(usuario);
+            setMessage("Usuario recuperado. Ya puedes apostar.", "ok");
+        } catch (error) {
+            localStorage.removeItem("caballos.userId");
+            setMessage(error.message, "error");
+        }
+    }
+
+    async function registrarUsuario() {
+        const nombre = refs.nombreUsuario.value.trim();
+        if (!nombre) {
+            setMessage("Escribe un nombre para registrarte.", "error");
+            return;
+        }
+
+        try {
+            const usuario = await apiRequest("/api/usuarios/registrar", {
+                method: "POST",
+                body: JSON.stringify({ nombre })
+            });
+
+            aplicarUsuario(usuario);
+            refs.nombreUsuario.value = "";
+            setMessage(`Registro exitoso. Grupo ${usuario.grupo} con ${usuario.puntos} puntos iniciales.`, "ok");
+        } catch (error) {
+            setMessage(error.message, "error");
+        }
+    }
+
+    async function comprarPuntos() {
+        if (!state.user) {
+            setMessage("Debes registrarte antes de comprar puntos.", "error");
+            return;
+        }
+
+        const paquetes = Number(refs.paquetesCompra.value);
+        if (!paquetes || paquetes < 1) {
+            setMessage("Indica una cantidad valida de paquetes.", "error");
+            return;
+        }
+
+        try {
+            const compra = await apiRequest(`/api/usuarios/${state.user.id}/comprar`, {
+                method: "POST",
+                body: JSON.stringify({ paquetes })
+            });
+
+            state.user.puntos = compra.saldoActual;
+            renderUserPanel();
+            setMessage(`Compra aprobada: +${compra.puntosRecibidos} puntos por ${formatPesos(compra.costoPesos)}.`, "ok");
+        } catch (error) {
+            setMessage(error.message, "error");
+        }
+    }
+
+    async function apostarDesdeFormulario() {
+        const caballo = refs.caballoApuesta.value;
+        const puntos = Number(refs.puntosApuesta.value);
+        await ejecutarApuesta(caballo, puntos);
+    }
+
+    async function repetirApuesta() {
+        if (!state.lastBet) {
+            setMessage("Primero realiza una apuesta.", "error");
+            return;
+        }
+
+        await ejecutarApuesta(state.lastBet.caballo, state.lastBet.puntos);
+    }
+
+    async function ejecutarApuesta(caballo, puntos) {
+        if (!state.user) {
+            setMessage("Debes registrarte antes de apostar.", "error");
+            return;
+        }
+
+        if (!puntos || puntos < 1) {
+            setMessage("El valor apostado debe ser mayor a 0.", "error");
+            return;
+        }
+
         stopAnimation();
         setLoadingState();
 
-        const response = await fetch("/api/juego", { headers: { Accept: "application/json" } });
-        const resultado = await response.json();
+        try {
+            const data = await apiRequest("/api/juego/apostar", {
+                method: "POST",
+                body: JSON.stringify({
+                    usuarioId: state.user.id,
+                    caballo,
+                    puntosApostados: puntos
+                })
+            });
 
-        state.resultado = resultado;
-        state.currentTurn = 0;
+            state.resultado = data.resultado;
+            state.currentTurn = 0;
+            state.lastBet = { caballo, puntos };
+            state.user.puntos = data.saldoActual;
 
-        refs.metaTexto.textContent = `${resultado.meta} casillas`;
-        refs.turnosTotales.textContent = String(resultado.turnos.length);
-        refs.ganadorTexto.textContent = resultado.ganador ? resultado.ganador.nombre : "Sin ganador";
+            renderUserPanel();
+            refs.metaTexto.textContent = `${data.resultado.meta} casillas`;
+            refs.turnosTotales.textContent = String(data.resultado.turnos.length);
+            refs.ganadorTexto.textContent = data.resultado.ganador ? data.resultado.ganador.nombre : "Sin ganador";
+            refs.winnerBadge.classList.add("hidden");
+
+            renderInitialTrack(data.resultado);
+            renderLog(data.resultado.turnos);
+            animateTurns();
+            setMessage(data.mensaje + ` Saldo actual: ${data.saldoActual} puntos.`, data.gano ? "ok" : "");
+        } catch (error) {
+            setDefaultRaceState();
+            setMessage(error.message, "error");
+        }
+    }
+
+    function aplicarUsuario(usuario) {
+        state.user = usuario;
+        localStorage.setItem("caballos.userId", String(usuario.id));
+        renderUserPanel();
+    }
+
+    function renderUserPanel() {
+        if (!state.user) {
+            refs.usuarioNombre.textContent = "Sin registro";
+            refs.usuarioGrupo.textContent = "-";
+            refs.usuarioPuntos.textContent = "0";
+            return;
+        }
+
+        refs.usuarioNombre.textContent = state.user.nombre;
+        refs.usuarioGrupo.textContent = String(state.user.grupo);
+        refs.usuarioPuntos.textContent = String(state.user.puntos);
+    }
+
+    function setDefaultRaceState() {
+        refs.track.innerHTML = '<div class="glass-card">Aun no hay una carrera activa.</div>';
+        refs.log.innerHTML = "";
+        refs.turnoActual.textContent = "0";
+        refs.cartaActual.textContent = "Esperando...";
+        refs.caballoActual.textContent = "Esperando...";
+        refs.ganadorTexto.textContent = "Pendiente";
+        refs.turnosTotales.textContent = "0";
+        refs.metaTexto.textContent = "7 casillas";
         refs.winnerBadge.classList.add("hidden");
-
-        renderInitialTrack(resultado);
-        renderLog(resultado.turnos);
-        animateTurns();
+        refs.winnerBadge.textContent = "";
     }
 
     function restartAnimation() {
@@ -75,7 +228,7 @@
     }
 
     function setLoadingState() {
-        refs.track.innerHTML = "<div class=\"glass-card\">Preparando nueva carrera...</div>";
+        refs.track.innerHTML = '<div class="glass-card">Procesando apuesta y preparando carrera...</div>';
         refs.log.innerHTML = "";
         refs.turnoActual.textContent = "0";
         refs.cartaActual.textContent = "Barajando...";
@@ -86,32 +239,43 @@
     function renderInitialTrack(resultado) {
         refs.track.innerHTML = resultado.caballos.map((caballo) => {
             const style = horseStyles[caballo.nombre];
-            const cells = [`
-                <div class="lane-cell start" data-step="S">
-                    <div class="token-slot" data-horse="${caballo.nombre}" data-step="0"></div>
-                </div>
-            `];
+            const cells = [
+                '<div class="lane-cell start" data-step="S"><div class="token-slot" data-horse="' +
+                caballo.nombre +
+                '" data-step="0"></div></div>'
+            ];
 
             for (let step = 1; step <= resultado.meta; step += 1) {
-                cells.push(`
-                    <div class="lane-cell ${step === resultado.meta ? "finish" : ""}" data-step="${step}">
-                        <div class="token-slot" data-horse="${caballo.nombre}" data-step="${step}"></div>
-                    </div>
-                `);
+                cells.push(
+                    '<div class="lane-cell ' +
+                    (step === resultado.meta ? "finish" : "") +
+                    '" data-step="' +
+                    step +
+                    '"><div class="token-slot" data-horse="' +
+                    caballo.nombre +
+                    '" data-step="' +
+                    step +
+                    '"></div></div>'
+                );
             }
 
-            return `
-                <article class="track-row" id="${slugify(caballo.nombre)}">
-                    <div class="track-header">
-                        <div class="horse-name">
-                            <span class="horse-badge" style="background:${style.color}">${style.badge}</span>
-                            <span>${caballo.nombre}</span>
-                        </div>
-                        <span class="horse-progress-text" id="${slugify(caballo.nombre)}-progress">Posicion 0 de ${resultado.meta}</span>
-                    </div>
-                    <div class="lane">${cells.join("")}</div>
-                </article>
-            `;
+            return (
+                '<article class="track-row" id="' +
+                slugify(caballo.nombre) +
+                '"><div class="track-header"><div class="horse-name"><span class="horse-badge" style="background:' +
+                style.color +
+                '">' +
+                style.badge +
+                '</span><span>' +
+                caballo.nombre +
+                '</span></div><span class="horse-progress-text" id="' +
+                slugify(caballo.nombre) +
+                '-progress">Posicion 0 de ' +
+                resultado.meta +
+                '</span></div><div class="lane">' +
+                cells.join("") +
+                "</div></article>"
+            );
         }).join("");
 
         resultado.caballos.forEach((caballo) => {
@@ -204,6 +368,42 @@
         refs.ganadorTexto.textContent = state.resultado.ganador.nombre;
         refs.winnerBadge.classList.remove("hidden");
         refs.winnerBadge.textContent = `Ganador oficial: ${state.resultado.ganador.nombre} en ${state.resultado.turnos.length} turnos.`;
+    }
+
+    function setMessage(text, type) {
+        refs.mensajeSistema.textContent = text;
+        refs.mensajeSistema.classList.remove("ok", "error");
+        if (type === "ok") {
+            refs.mensajeSistema.classList.add("ok");
+        }
+        if (type === "error") {
+            refs.mensajeSistema.classList.add("error");
+        }
+    }
+
+    async function apiRequest(url, options = {}) {
+        const response = await fetch(url, {
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json"
+            },
+            ...options
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.error || "Error de servidor");
+        }
+
+        return payload;
+    }
+
+    function formatPesos(valor) {
+        return new Intl.NumberFormat("es-CO", {
+            style: "currency",
+            currency: "COP",
+            maximumFractionDigits: 0
+        }).format(valor);
     }
 
     function slugify(text) {

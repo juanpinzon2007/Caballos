@@ -4,27 +4,29 @@ Aplicacion web desarrollada con Java y Spring Boot para automatizar el juego de 
 
 ## Estado Del Proyecto
 
-- Interfaz renovada con una presentacion mas profesional.
-- Simulacion visual por turnos, sin mover todos los caballos al mismo tiempo.
-- API interna para entregar el resultado completo de la carrera.
-- Historial animado de cartas, movimientos y ganador.
-- Documentacion integrada para sustentar la metodologia.
-- Pruebas automaticas pasando.
+- Base de datos PostgreSQL integrada con JPA.
+- Registro de usuarios con 1000 puntos iniciales.
+- Modo multiusuario con limite de 4 grupos de 4 usuarios.
+- Apuestas con valor variable y premio x5 cuando el usuario gana.
+- Compra de puntos ilimitada: paquete de 1000 puntos por 10.000 COP.
+- Simulacion visual de la carrera por turnos con historial completo.
 
 ## Caracteristicas Principales
 
-- Pantalla de inicio con descripcion del proyecto.
-- Simulacion visual de la pista en tiempo real.
-- Control de velocidad de animacion.
-- Boton para generar una nueva carrera.
-- Historial de turnos con carta revelada, caballo que avanza y nueva posicion.
-- Resumen final con ganador, turnos totales y meta.
-- Pagina de documentacion con analisis, alternativas, diseno, implementacion, pruebas y conclusiones.
+- Registro/login por nombre de usuario.
+- Asignacion automatica a grupos con capacidad maxima.
+- Saldo inicial de 1000 puntos por usuario.
+- Apuesta por caballo con monto variable.
+- Pago de premio x5 sobre lo apostado si acierta.
+- Compra de paquetes de puntos sin limite.
+- Persistencia de usuarios, apuestas y compras en PostgreSQL.
 
 ## Tecnologias
 
 - Java 17+
 - Spring Boot
+- Spring Data JPA
+- PostgreSQL
 - Maven Wrapper
 - JUnit
 - HTML, CSS y JavaScript nativo
@@ -72,6 +74,7 @@ Esto corrige el problema de una visualizacion donde parecia que todos se movian 
 
 - Windows, Linux o macOS
 - JDK 17 o superior
+- Docker (opcional, para levantar PostgreSQL rapido)
 - Navegador web
 
 ## Configuracion De Java En Windows
@@ -94,14 +97,20 @@ Despues cierra y abre la terminal.
 ## Como Ejecutar El Proyecto
 
 1. Abre una terminal en la carpeta del proyecto.
-2. Configura `JAVA_HOME` si hace falta.
-3. Ejecuta:
+2. Levanta PostgreSQL (opcional con Docker):
+
+```powershell
+docker compose up -d
+```
+
+3. Configura `JAVA_HOME` si hace falta.
+4. Ejecuta:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-4. Abre:
+5. Abre:
 
 ```text
 http://localhost:8080/
@@ -110,9 +119,13 @@ http://localhost:8080/
 ## Rutas De La Aplicacion
 
 - `/` pagina principal
-- `/jugar` interfaz principal de la carrera
+- `/jugar` interfaz principal multiusuario
 - `/documentacion` documentacion metodologica
 - `/api/juego` resultado JSON de una carrera completa
+- `/api/juego/apostar` ejecutar apuesta de usuario
+- `/api/usuarios/registrar` registrar usuario (1000 puntos iniciales)
+- `/api/usuarios/{usuarioId}` consultar usuario
+- `/api/usuarios/{usuarioId}/comprar` comprar paquetes de puntos
 
 ## Como Probar La Aplicacion
 
@@ -213,9 +226,9 @@ El proyecto demuestra de forma clara el uso de modelo de datos, estructuras, ope
 
 ## Cambios Recientes
 
-- Rediseno completo de la interfaz.
-- Animacion real por turnos.
-- Nueva API `/api/juego`.
-- Historial con estado de cada paso.
-- Documentacion y guias actualizadas.
-- Correccion de la percepcion de movimiento simultaneo.
+- Persistencia real en PostgreSQL.
+- Nuevo dominio de datos para usuarios, grupos, apuestas y compras.
+- Reglas multiusuario: 4 grupos, 4 usuarios por grupo.
+- Registro con 1000 puntos iniciales.
+- Premio x5 por apuesta ganadora.
+- Compra ilimitada de paquetes de puntos (1000 por 10.000 COP).
