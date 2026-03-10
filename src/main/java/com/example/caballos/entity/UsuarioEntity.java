@@ -24,6 +24,9 @@ public class UsuarioEntity {
     @Column(nullable = false)
     private Integer puntos;
 
+    @Column(length = 120)
+    private String passwordHash;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "grupo_id")
     private GrupoEntity grupo;
@@ -31,9 +34,10 @@ public class UsuarioEntity {
     protected UsuarioEntity() {
     }
 
-    public UsuarioEntity(String nombre, Integer puntos, GrupoEntity grupo) {
+    public UsuarioEntity(String nombre, Integer puntos, String passwordHash, GrupoEntity grupo) {
         this.nombre = nombre;
         this.puntos = puntos;
+        this.passwordHash = passwordHash;
         this.grupo = grupo;
     }
 
@@ -51,6 +55,14 @@ public class UsuarioEntity {
 
     public void setPuntos(Integer puntos) {
         this.puntos = puntos;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public GrupoEntity getGrupo() {

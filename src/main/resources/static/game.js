@@ -1,17 +1,19 @@
 (function () {
     const horseStyles = {
-        "As de Corazones": { color: "#c23861", badge: "?" },
-        "As de Diamantes": { color: "#d97706", badge: "?" },
-        "As de Treboles": { color: "#2b7a4b", badge: "?" },
-        "As de Picas": { color: "#164863", badge: "?" }
+        "As de Corazones": { color: "#c23861", badge: "\u2665" },
+        "As de Diamantes": { color: "#d97706", badge: "\u2666" },
+        "As de Treboles": { color: "#2b7a4b", badge: "\u2663" },
+        "As de Picas": { color: "#164863", badge: "\u2660" }
     };
 
     const state = {
+        token: null,
         user: null,
         resultado: null,
         currentTurn: 0,
         timerId: null,
-        lastBet: null
+        lastBet: null,
+        busy: false
     };
 
     const refs = {
@@ -26,10 +28,15 @@
         winnerBadge: document.getElementById("winnerBadge"),
         velocidad: document.getElementById("velocidad"),
         reiniciarBtn: document.getElementById("reiniciarBtn"),
+        logoutBtn: document.getElementById("logoutBtn"),
         registrarBtn: document.getElementById("registrarBtn"),
+        loginBtn: document.getElementById("loginBtn"),
         apostarBtn: document.getElementById("apostarBtn"),
         comprarBtn: document.getElementById("comprarBtn"),
-        nombreUsuario: document.getElementById("nombreUsuario"),
+        registroNombre: document.getElementById("registroNombre"),
+        registroPassword: document.getElementById("registroPassword"),
+        loginNombre: document.getElementById("loginNombre"),
+        loginPassword: document.getElementById("loginPassword"),
         caballoApuesta: document.getElementById("caballoApuesta"),
         puntosApuesta: document.getElementById("puntosApuesta"),
         paquetesCompra: document.getElementById("paquetesCompra"),
@@ -44,7 +51,9 @@
     }
 
     refs.reiniciarBtn.addEventListener("click", repetirApuesta);
+    refs.logoutBtn.addEventListener("click", logout);
     refs.registrarBtn.addEventListener("click", registrarUsuario);
+    refs.loginBtn.addEventListener("click", loginUsuario);
     refs.apostarBtn.addEventListener("click", apostarDesdeFormulario);
     refs.comprarBtn.addEventListener("click", comprarPuntos);
     refs.velocidad.addEventListener("change", () => {
@@ -54,49 +63,115 @@
     });
 
     setDefaultRaceState();
-    restaurarUsuario();
+    renderUserPanel();
+    restoreSession();
 
-    async function restaurarUsuario() {
-        const userId = Number(localStorage.getItem("caballos.userId"));
-        if (!userId) {
-            setMessage("Registra un usuario para comenzar.");
+    async function restoreSession() {
+        const token = localStorage.getItem("caballos.token");
+        if (!token) {
+            setMessage("Registra o inicia sesion para comenzar.");
             return;
         }
 
+        state.token = token;
         try {
-            const usuario = await apiRequest(`/api/usuarios/${userId}`);
-            aplicarUsuario(usuario);
-            setMessage("Usuario recuperado. Ya puedes apostar.", "ok");
+            const user = await apiRequest("/api/auth/me", { auth: true });
+            applyUser(user);
+            setMessage("Sesion recuperada correctamente.", "ok");
         } catch (error) {
-            localStorage.removeItem("caballos.userId");
-            setMessage(error.message, "error");
+            clearSession();
+            setMessage("Tu sesion expiro. Inicia sesion nuevamente.", "error");
         }
     }
 
     async function registrarUsuario() {
-        const nombre = refs.nombreUsuario.value.trim();
-        if (!nombre) {
-            setMessage("Escribe un nombre para registrarte.", "error");
+        if (state.busy) {
             return;
         }
 
+        const nombre = refs.registroNombre.value.trim();
+        const password = refs.registroPassword.value;
+
+        if (!nombre || !password) {
+            setMessage("Debes ingresar nombre y contrasena para registrar.", "error");
+            return;
+        }
+
+        if (password.length < 6) {
+            setMessage("La contrasena debe tener minimo 6 caracteres.", "error");
+            return;
+        }
+
+        setBusy(true);
         try {
-            const usuario = await apiRequest("/api/usuarios/registrar", {
+            const auth = await apiRequest("/api/auth/registro", {
                 method: "POST",
-                body: JSON.stringify({ nombre })
+                body: JSON.stringify({ nombre, password })
             });
 
-            aplicarUsuario(usuario);
-            refs.nombreUsuario.value = "";
-            setMessage(`Registro exitoso. Grupo ${usuario.grupo} con ${usuario.puntos} puntos iniciales.`, "ok");
+            applyAuth(auth);
+            refs.registroNombre.value = "";
+            refs.registroPassword.value = "";
+            setMessage(`Registro exitoso. Grupo ${auth.usuario.grupo} con 1000 puntos iniciales.`, "ok");
         } catch (error) {
             setMessage(error.message, "error");
+        } finally {
+            setBusy(false);
         }
+    }
+
+    async function loginUsuario() {
+        if (state.busy) {
+            return;
+        }
+
+        const nombre = refs.loginNombre.value.trim();
+        const password = refs.loginPassword.value;
+
+        if (!nombre || !password) {
+            setMessage("Debes ingresar nombre y contrasena para iniciar sesion.", "error");
+            return;
+        }
+
+        setBusy(true);
+        try {
+            const auth = await apiRequest("/api/auth/login", {
+                method: "POST",
+                body: JSON.stringify({ nombre, password })
+            });
+
+            applyAuth(auth);
+            refs.loginPassword.value = "";
+            setMessage("Inicio de sesion exitoso.", "ok");
+        } catch (error) {
+            setMessage(error.message, "error");
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function logout() {
+        if (!state.token || state.busy) {
+            clearSession();
+            return;
+        }
+
+        setBusy(true);
+        try {
+            await apiRequest("/api/auth/logout", { method: "POST", auth: true });
+        } catch (_) {
+            // no-op: logout local should still happen even if backend fails
+        } finally {
+            clearSession();
+            setBusy(false);
+        }
+
+        setMessage("Sesion cerrada.", "ok");
     }
 
     async function comprarPuntos() {
         if (!state.user) {
-            setMessage("Debes registrarte antes de comprar puntos.", "error");
+            setMessage("Debes iniciar sesion antes de comprar puntos.", "error");
             return;
         }
 
@@ -106,9 +181,15 @@
             return;
         }
 
+        if (state.busy) {
+            return;
+        }
+
+        setBusy(true);
         try {
-            const compra = await apiRequest(`/api/usuarios/${state.user.id}/comprar`, {
+            const compra = await apiRequest("/api/usuarios/me/comprar", {
                 method: "POST",
+                auth: true,
                 body: JSON.stringify({ paquetes })
             });
 
@@ -116,7 +197,10 @@
             renderUserPanel();
             setMessage(`Compra aprobada: +${compra.puntosRecibidos} puntos por ${formatPesos(compra.costoPesos)}.`, "ok");
         } catch (error) {
+            handleAuthErrorIfNeeded(error);
             setMessage(error.message, "error");
+        } finally {
+            setBusy(false);
         }
     }
 
@@ -137,26 +221,28 @@
 
     async function ejecutarApuesta(caballo, puntos) {
         if (!state.user) {
-            setMessage("Debes registrarte antes de apostar.", "error");
+            setMessage("Debes iniciar sesion antes de apostar.", "error");
             return;
         }
 
-        if (!puntos || puntos < 1) {
-            setMessage("El valor apostado debe ser mayor a 0.", "error");
+        if (!puntos || puntos < 10) {
+            setMessage("La apuesta minima es de 10 puntos.", "error");
+            return;
+        }
+
+        if (state.busy) {
             return;
         }
 
         stopAnimation();
         setLoadingState();
+        setBusy(true);
 
         try {
             const data = await apiRequest("/api/juego/apostar", {
                 method: "POST",
-                body: JSON.stringify({
-                    usuarioId: state.user.id,
-                    caballo,
-                    puntosApostados: puntos
-                })
+                auth: true,
+                body: JSON.stringify({ caballo, puntosApostados: puntos })
             });
 
             state.resultado = data.resultado;
@@ -175,28 +261,66 @@
             animateTurns();
             setMessage(data.mensaje + ` Saldo actual: ${data.saldoActual} puntos.`, data.gano ? "ok" : "");
         } catch (error) {
+            handleAuthErrorIfNeeded(error);
             setDefaultRaceState();
             setMessage(error.message, "error");
+        } finally {
+            setBusy(false);
         }
     }
 
-    function aplicarUsuario(usuario) {
-        state.user = usuario;
-        localStorage.setItem("caballos.userId", String(usuario.id));
+    function applyAuth(auth) {
+        state.token = auth.token;
+        localStorage.setItem("caballos.token", state.token);
+        applyUser(auth.usuario);
+    }
+
+    function applyUser(user) {
+        state.user = user;
         renderUserPanel();
+    }
+
+    function clearSession() {
+        stopAnimation();
+        state.token = null;
+        state.user = null;
+        state.resultado = null;
+        state.lastBet = null;
+        localStorage.removeItem("caballos.token");
+        renderUserPanel();
+        setDefaultRaceState();
+    }
+
+    function handleAuthErrorIfNeeded(error) {
+        if (error.status === 401) {
+            clearSession();
+        }
     }
 
     function renderUserPanel() {
         if (!state.user) {
-            refs.usuarioNombre.textContent = "Sin registro";
+            refs.usuarioNombre.textContent = "Sin sesion";
             refs.usuarioGrupo.textContent = "-";
             refs.usuarioPuntos.textContent = "0";
+            refs.logoutBtn.classList.add("hidden");
             return;
         }
 
         refs.usuarioNombre.textContent = state.user.nombre;
         refs.usuarioGrupo.textContent = String(state.user.grupo);
         refs.usuarioPuntos.textContent = String(state.user.puntos);
+        refs.logoutBtn.classList.remove("hidden");
+    }
+
+    function setBusy(isBusy) {
+        state.busy = isBusy;
+        const disabled = isBusy;
+        refs.registrarBtn.disabled = disabled;
+        refs.loginBtn.disabled = disabled;
+        refs.apostarBtn.disabled = disabled;
+        refs.comprarBtn.disabled = disabled;
+        refs.reiniciarBtn.disabled = disabled;
+        refs.logoutBtn.disabled = disabled;
     }
 
     function setDefaultRaceState() {
@@ -382,17 +506,33 @@
     }
 
     async function apiRequest(url, options = {}) {
+        const headers = {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            ...(options.headers || {})
+        };
+
+        if (options.auth && state.token) {
+            headers.Authorization = `Bearer ${state.token}`;
+        }
+
         const response = await fetch(url, {
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json"
-            },
-            ...options
+            method: options.method || "GET",
+            headers,
+            body: options.body
         });
 
-        const payload = await response.json();
+        let payload = {};
+        try {
+            payload = await response.json();
+        } catch (_) {
+            payload = {};
+        }
+
         if (!response.ok) {
-            throw new Error(payload.error || "Error de servidor");
+            const error = new Error(payload.error || "Error de servidor");
+            error.status = response.status;
+            throw error;
         }
 
         return payload;

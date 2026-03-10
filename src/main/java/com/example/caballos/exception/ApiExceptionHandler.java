@@ -11,6 +11,11 @@ import java.util.Map;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<Map<String, String>> manejarAuth(AuthException exception) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", exception.getMessage()));
+    }
+
     @ExceptionHandler(ReglaNegocioException.class)
     public ResponseEntity<Map<String, String>> manejarRegla(ReglaNegocioException exception) {
         return ResponseEntity.badRequest().body(Map.of("error", exception.getMessage()));

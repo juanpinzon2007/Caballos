@@ -86,7 +86,8 @@ public class JuegoController {
                             <a class="brand" href="/">Caballos</a>
                             <nav class="topbar-actions">
                                 <a class="button button-ghost" href="/documentacion">Documentacion</a>
-                                <button class="button button-primary" id="reiniciarBtn" type="button">Apostar de nuevo</button>
+                                <button class="button button-ghost hidden" id="logoutBtn" type="button">Cerrar sesion</button>
+                                <button class="button button-primary" id="reiniciarBtn" type="button">Repetir apuesta</button>
                             </nav>
                         </header>
 
@@ -123,10 +124,18 @@ public class JuegoController {
                                     </div>
 
                                     <div class="control-grid">
-                                        <label for="nombreUsuario">Nombre de usuario</label>
+                                        <label for="registroNombre">Registro: nombre de usuario</label>
                                         <div class="inline-actions">
-                                            <input id="nombreUsuario" type="text" maxlength="60" placeholder="Ejemplo: AnaPerez">
+                                            <input id="registroNombre" type="text" maxlength="60" placeholder="Ejemplo: AnaPerez">
+                                            <input id="registroPassword" type="password" minlength="6" maxlength="72" placeholder="Contrasena (min 6)">
                                             <button class="button button-secondary" id="registrarBtn" type="button">Registrarse</button>
+                                        </div>
+
+                                        <label for="loginNombre">Iniciar sesion</label>
+                                        <div class="inline-actions">
+                                            <input id="loginNombre" type="text" maxlength="60" placeholder="Nombre de usuario">
+                                            <input id="loginPassword" type="password" minlength="6" maxlength="72" placeholder="Contrasena">
+                                            <button class="button button-secondary" id="loginBtn" type="button">Entrar</button>
                                         </div>
 
                                         <label for="caballoApuesta">Caballo</label>
@@ -138,7 +147,7 @@ public class JuegoController {
                                         </select>
 
                                         <label for="puntosApuesta">Puntos a apostar</label>
-                                        <input id="puntosApuesta" type="number" min="1" step="1" value="100">
+                                        <input id="puntosApuesta" type="number" min="10" step="1" value="100">
 
                                         <label for="paquetesCompra">Comprar puntos (1000 por 10.000 COP)</label>
                                         <div class="inline-actions">
@@ -151,7 +160,7 @@ public class JuegoController {
                                         </div>
                                     </div>
 
-                                    <p id="mensajeSistema" class="system-message">Registra un usuario para comenzar.</p>
+                                    <p id="mensajeSistema" class="system-message">Registra o inicia sesion para comenzar.</p>
 
                                     <div class="section-head">
                                         <div>

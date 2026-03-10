@@ -1,4 +1,4 @@
 package com.example.caballos.dto;
 
-public record ApuestaRequest(Long usuarioId, String caballo, Integer puntosApostados) {
+public record ApuestaRequest(String caballo, Integer puntosApostados) {
 }

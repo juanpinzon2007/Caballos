@@ -10,6 +10,8 @@ import com.example.caballos.repository.CompraPuntosRepository;
 import com.example.caballos.repository.GrupoRepository;
 import com.example.caballos.repository.UsuarioRepository;
 import jakarta.annotation.PostConstruct;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final GrupoRepository grupoRepository;
     private final CompraPuntosRepository compraPuntosRepository;
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           GrupoRepository grupoRepository,
@@ -49,16 +52,21 @@ public class UsuarioService {
     }
 
     @Transactional
-    public UsuarioResponse registrar(String nombre) {
+    public UsuarioResponse registrar(String nombre, String password) {
         String nombreLimpio = normalizarNombre(nombre);
+        validarPassword(password);
 
-        UsuarioEntity existente = usuarioRepository.findByNombreIgnoreCase(nombreLimpio).orElse(null);
-        if (existente != null) {
-            return mapUsuario(existente);
+        if (usuarioRepository.findByNombreIgnoreCase(nombreLimpio).isPresent()) {
+            throw new ReglaNegocioException("Ese nombre de usuario ya existe");
         }
 
         GrupoEntity grupo = obtenerGrupoDisponible();
-        UsuarioEntity nuevo = new UsuarioEntity(nombreLimpio, PUNTOS_INICIALES, grupo);
+        UsuarioEntity nuevo = new UsuarioEntity(
+                nombreLimpio,
+                PUNTOS_INICIALES,
+                passwordEncoder.encode(password),
+                grupo
+        );
         UsuarioEntity guardado = usuarioRepository.save(nuevo);
 
         return mapUsuario(guardado);
@@ -69,13 +77,21 @@ public class UsuarioService {
         return mapUsuario(obtenerEntidad(usuarioId));
     }
 
+    @Transactional(readOnly = true)
+    public UsuarioResponse obtenerPerfil(UsuarioEntity usuario) {
+        return mapUsuario(usuario);
+    }
+
     @Transactional
-    public CompraPuntosResponse comprarPuntos(Long usuarioId, Integer paquetes) {
+    public CompraPuntosResponse comprarPuntos(UsuarioEntity usuario, Integer paquetes) {
         if (paquetes == null || paquetes <= 0) {
             throw new ReglaNegocioException("Debes comprar al menos 1 paquete de puntos");
         }
 
-        UsuarioEntity usuario = obtenerEntidad(usuarioId);
+        if (paquetes > 1000) {
+            throw new ReglaNegocioException("Compra demasiado grande en una sola operacion. Maximo 1000 paquetes");
+        }
+
         int puntosRecibidos = paquetes * PUNTOS_POR_PAQUETE;
         int costoPesos = paquetes * COSTO_POR_PAQUETE;
 
@@ -91,6 +107,25 @@ public class UsuarioService {
         ));
 
         return new CompraPuntosResponse(paquetes, puntosRecibidos, costoPesos, usuario.getPuntos());
+    }
+
+    @Transactional(readOnly = true)
+    public UsuarioEntity validarCredenciales(String nombre, String password) {
+        String nombreLimpio = normalizarNombre(nombre);
+        validarPassword(password);
+
+        UsuarioEntity usuario = usuarioRepository.findByNombreIgnoreCase(nombreLimpio)
+                .orElseThrow(() -> new ReglaNegocioException("Usuario o contrasena invalida"));
+
+        if (usuario.getPasswordHash() == null || usuario.getPasswordHash().isBlank()) {
+            throw new ReglaNegocioException("Usuario sin contrasena registrada. Crea una cuenta nueva.");
+        }
+
+        if (!passwordEncoder.matches(password, usuario.getPasswordHash())) {
+            throw new ReglaNegocioException("Usuario o contrasena invalida");
+        }
+
+        return usuario;
     }
 
     @Transactional(readOnly = true)
@@ -126,7 +161,17 @@ public class UsuarioService {
         return limpio;
     }
 
-    private UsuarioResponse mapUsuario(UsuarioEntity usuario) {
+    private void validarPassword(String password) {
+        if (password == null || password.isBlank()) {
+            throw new ReglaNegocioException("La contrasena es obligatoria");
+        }
+
+        if (password.length() < 6 || password.length() > 72) {
+            throw new ReglaNegocioException("La contrasena debe tener entre 6 y 72 caracteres");
+        }
+    }
+
+    public UsuarioResponse mapUsuario(UsuarioEntity usuario) {
         return new UsuarioResponse(
                 usuario.getId(),
                 usuario.getNombre(),

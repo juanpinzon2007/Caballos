@@ -14,6 +14,8 @@ import java.util.Set;
 
 @Service
 public class ApuestaService {
+    private static final int APUESTA_MINIMA = 10;
+    private static final int APUESTA_MAXIMA = 1_000_000;
 
     private static final Set<String> CABALLOS_VALIDOS = Set.of(
             "As de Corazones",
@@ -23,22 +25,17 @@ public class ApuestaService {
     );
 
     private final JuegoService juegoService;
-    private final UsuarioService usuarioService;
     private final ApuestaRepository apuestaRepository;
 
     public ApuestaService(JuegoService juegoService,
-                          UsuarioService usuarioService,
                           ApuestaRepository apuestaRepository) {
         this.juegoService = juegoService;
-        this.usuarioService = usuarioService;
         this.apuestaRepository = apuestaRepository;
     }
 
     @Transactional
-    public ApuestaResponse apostar(Long usuarioId, String caballoElegido, Integer puntosApostados) {
+    public ApuestaResponse apostar(UsuarioEntity usuario, String caballoElegido, Integer puntosApostados) {
         validarApuesta(caballoElegido, puntosApostados);
-
-        UsuarioEntity usuario = usuarioService.obtenerEntidad(usuarioId);
 
         if (usuario.getPuntos() < puntosApostados) {
             throw new ReglaNegocioException("No tienes puntos suficientes para apostar ese valor");
@@ -86,8 +83,12 @@ public class ApuestaService {
             throw new ReglaNegocioException("Debes elegir un caballo valido");
         }
 
-        if (puntosApostados == null || puntosApostados <= 0) {
-            throw new ReglaNegocioException("La apuesta debe ser mayor que cero");
+        if (puntosApostados == null || puntosApostados < APUESTA_MINIMA) {
+            throw new ReglaNegocioException("La apuesta minima es de " + APUESTA_MINIMA + " puntos");
+        }
+
+        if (puntosApostados > APUESTA_MAXIMA) {
+            throw new ReglaNegocioException("La apuesta excede el maximo permitido");
         }
     }
 }
