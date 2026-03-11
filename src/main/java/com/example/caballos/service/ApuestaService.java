@@ -47,7 +47,7 @@ public class ApuestaService {
         ResultadoJuego resultado = juegoService.jugar();
         String caballoGanador = resultado.getGanador().getNombre();
         boolean gano = caballoGanador.equals(caballoElegido);
-        int premio = gano ? puntosApostados * 5 : 0;
+        int premio = gano ? puntosApostados * UsuarioService.MULTIPLICADOR_GANANCIA : 0;
 
         usuario.setPuntos(usuario.getPuntos() + premio);
 
@@ -64,7 +64,7 @@ public class ApuestaService {
         ));
 
         String mensaje = gano
-                ? "Ganaste. Se acreditaron " + premio + " puntos (x5)."
+                ? "Ganaste. Se acreditaron " + premio + " puntos (x" + UsuarioService.MULTIPLICADOR_GANANCIA + ")."
                 : "No ganaste esta carrera. Intenta de nuevo.";
 
         return new ApuestaResponse(

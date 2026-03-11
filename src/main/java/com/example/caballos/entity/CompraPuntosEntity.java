@@ -55,4 +55,24 @@ public class CompraPuntosEntity {
     public Long getId() {
         return id;
     }
+
+    public Integer getPaquetes() {
+        return paquetes;
+    }
+
+    public Integer getPuntosOtorgados() {
+        return puntosOtorgados;
+    }
+
+    public Integer getCostoPesos() {
+        return costoPesos;
+    }
+
+    public Integer getSaldoDespues() {
+        return saldoDespues;
+    }
+
+    public LocalDateTime getFecha() {
+        return fecha;
+    }
 }

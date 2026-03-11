@@ -77,49 +77,80 @@ public class JuegoController {
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Caballos | Simulacion</title>
+                    <title>Caballos | Plataforma de apuestas</title>
+                    <link rel="preconnect" href="https://fonts.googleapis.com">
+                    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
                     <link rel="stylesheet" href="/app.css">
                 </head>
                 <body class="game-body">
                     <div class="page-shell">
-                        <header class="topbar">
-                            <a class="brand" href="/">Caballos</a>
+                        <header class="topbar topbar-solid">
+                            <a class="brand brand-light" href="/">Caballos</a>
                             <nav class="topbar-actions">
-                                <a class="button button-ghost" href="/documentacion">Documentacion</a>
-                                <button class="button button-ghost hidden" id="logoutBtn" type="button">Cerrar sesion</button>
+                                <a class="button button-ghost button-light" href="/documentacion">Documentacion</a>
+                                <button class="button button-ghost button-light hidden" id="logoutBtn" type="button">Cerrar sesion</button>
                                 <button class="button button-primary" id="reiniciarBtn" type="button">Repetir apuesta</button>
                             </nav>
                         </header>
 
                         <main class="game-layout">
-                            <section class="hero hero-game">
-                                <div class="hero-copy">
-                                    <span class="eyebrow">Modo multiusuario</span>
-                                    <h1>Carrera de caballos con apuestas</h1>
-                                    <p class="lead">Registra usuarios con 1000 puntos iniciales, apuesta un valor variable y gana 5x cuando aciertes el caballo ganador.</p>
+                            <section class="command-center">
+                                <div class="command-copy">
+                                    <span class="eyebrow eyebrow-light">Plataforma multiusuario</span>
+                                    <h1>Caballos Racebook</h1>
+                                    <p class="lead lead-light">Registro con puntos iniciales, grupos automáticos, apuestas variables y recompensas multiplicadas por cinco en una interfaz lista para producción.</p>
+                                    <div class="hero-chip-row">
+                                        <div class="hero-chip">
+                                            <span class="chip-label">Capacidad</span>
+                                            <strong>4 grupos x 4 jugadores</strong>
+                                        </div>
+                                        <div class="hero-chip">
+                                            <span class="chip-label">Bienvenida</span>
+                                            <strong>1000 puntos por registro</strong>
+                                        </div>
+                                        <div class="hero-chip">
+                                            <span class="chip-label">Recarga</span>
+                                            <strong>1000 puntos / 10.000 COP</strong>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="hero-panel status-panel">
-                                    <div class="metric">
-                                        <span class="metric-label">Usuario</span>
-                                        <strong id="usuarioNombre">Sin registro</strong>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Grupo</span>
-                                        <strong id="usuarioGrupo">-</strong>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-label">Puntos</span>
-                                        <strong id="usuarioPuntos">0</strong>
+                                <div class="command-stage">
+                                    <div class="spotlight-card">
+                                        <span class="mini-label">Estado del jugador</span>
+                                        <div class="session-pill" id="sessionPill">Sin sesion iniciada</div>
+                                        <div class="metric-grid">
+                                            <div class="metric metric-dark">
+                                                <span class="metric-label">Usuario</span>
+                                                <strong id="usuarioNombre">Sin registro</strong>
+                                            </div>
+                                            <div class="metric metric-dark">
+                                                <span class="metric-label">Grupo</span>
+                                                <strong id="usuarioGrupo">-</strong>
+                                            </div>
+                                            <div class="metric metric-dark">
+                                                <span class="metric-label">Puntos</span>
+                                                <strong id="usuarioPuntos">0</strong>
+                                            </div>
+                                            <div class="metric metric-dark">
+                                                <span class="metric-label">Cupos libres</span>
+                                                <strong id="cuposDisponibles">0</strong>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </section>
 
-                            <section class="dashboard-grid">
-                                <article class="glass-card race-card">
+                            <section class="workspace-grid">
+                                <article class="glass-card race-card elevated-card">
                                     <div class="section-head">
                                         <div>
-                                            <span class="mini-label">Registro y apuesta</span>
-                                            <h2>Control de jugador</h2>
+                                            <span class="mini-label">Operación central</span>
+                                            <h2>Registro, wallet y apuesta</h2>
+                                        </div>
+                                        <div class="stacked-note">
+                                            <span>Premio por acierto</span>
+                                            <strong id="multiplicadorInfo">x5</strong>
                                         </div>
                                     </div>
 
@@ -152,11 +183,11 @@ public class JuegoController {
                                         <label for="paquetesCompra">Comprar puntos (1000 por 10.000 COP)</label>
                                         <div class="inline-actions">
                                             <input id="paquetesCompra" type="number" min="1" step="1" value="1">
-                                            <button class="button button-ghost" id="comprarBtn" type="button">Comprar</button>
+                                            <button class="button button-ghost" id="comprarBtn" type="button">Comprar paquetes</button>
                                         </div>
 
                                         <div class="inline-actions">
-                                            <button class="button button-primary" id="apostarBtn" type="button">Iniciar apuesta</button>
+                                            <button class="button button-primary" id="apostarBtn" type="button">Ejecutar apuesta</button>
                                         </div>
                                     </div>
 
@@ -179,57 +210,99 @@ public class JuegoController {
                                     <div id="track" class="track-board"></div>
                                 </article>
 
-                                <article class="glass-card summary-card">
-                                    <span class="mini-label">Resumen</span>
-                                    <h2>Estado de la carrera</h2>
-                                    <div class="summary-stack">
-                                        <div class="summary-row">
-                                            <span>Turno actual</span>
-                                            <strong id="turnoActual">0</strong>
+                                <aside class="sidebar-stack">
+                                    <article class="glass-card summary-card elevated-card">
+                                        <span class="mini-label">Resumen en vivo</span>
+                                        <h2>Estado de la carrera</h2>
+                                        <div class="summary-stack">
+                                            <div class="summary-row">
+                                                <span>Turno actual</span>
+                                                <strong id="turnoActual">0</strong>
+                                            </div>
+                                            <div class="summary-row">
+                                                <span>Carta activa</span>
+                                                <strong id="cartaActual">Esperando...</strong>
+                                            </div>
+                                            <div class="summary-row">
+                                                <span>Caballo en movimiento</span>
+                                                <strong id="caballoActual">Esperando...</strong>
+                                            </div>
+                                            <div class="summary-row">
+                                                <span>Meta</span>
+                                                <strong id="metaTexto">7 casillas</strong>
+                                            </div>
+                                            <div class="summary-row">
+                                                <span>Turnos totales</span>
+                                                <strong id="turnosTotales">0</strong>
+                                            </div>
+                                            <div class="summary-row">
+                                                <span>Ganador</span>
+                                                <strong id="ganadorTexto">Pendiente</strong>
+                                            </div>
                                         </div>
-                                        <div class="summary-row">
-                                            <span>Carta activa</span>
-                                            <strong id="cartaActual">Esperando...</strong>
+                                        <div id="winnerBadge" class="winner-badge hidden"></div>
+                                    </article>
+
+                                    <article class="glass-card elevated-card">
+                                        <span class="mini-label">Capacidad de la plataforma</span>
+                                        <h2>Grupos y usuarios</h2>
+                                        <div class="platform-stats">
+                                            <div class="summary-row">
+                                                <span>Usuarios registrados</span>
+                                                <strong id="usuariosRegistrados">0</strong>
+                                            </div>
+                                            <div class="summary-row">
+                                                <span>Cupos disponibles</span>
+                                                <strong id="cuposDisponiblesPanel">0</strong>
+                                            </div>
+                                            <div class="summary-row">
+                                                <span>Paquete vigente</span>
+                                                <strong id="paqueteInfo">1000 / 10.000 COP</strong>
+                                            </div>
                                         </div>
-                                        <div class="summary-row">
-                                            <span>Caballo en movimiento</span>
-                                            <strong id="caballoActual">Esperando...</strong>
-                                        </div>
-                                        <div class="summary-row">
-                                            <span>Meta</span>
-                                            <strong id="metaTexto">7 casillas</strong>
-                                        </div>
-                                        <div class="summary-row">
-                                            <span>Turnos totales</span>
-                                            <strong id="turnosTotales">0</strong>
-                                        </div>
-                                        <div class="summary-row">
-                                            <span>Ganador</span>
-                                            <strong id="ganadorTexto">Pendiente</strong>
-                                        </div>
-                                    </div>
-                                    <div id="winnerBadge" class="winner-badge hidden"></div>
-                                </article>
+                                        <div id="groupsGrid" class="groups-grid"></div>
+                                    </article>
+                                </aside>
                             </section>
 
-                            <section class="dashboard-grid bottom-grid">
-                                <article class="glass-card">
-                                    <span class="mini-label">Ultimos movimientos</span>
+                            <section class="insight-grid">
+                                <article class="glass-card elevated-card">
+                                    <span class="mini-label">Trazabilidad de la carrera</span>
                                     <h2>Historial paso a paso</h2>
                                     <div id="log" class="log-list"></div>
                                 </article>
 
-                                <article class="glass-card">
-                                    <span class="mini-label">Reglas de negocio</span>
-                                    <h2>Condiciones nuevas</h2>
-                                    <ul class="clean-list clean-list-wide">
-                                        <li>Registro de usuario con 1000 puntos iniciales.</li>
-                                        <li>Plataforma: maximo 4 grupos, 4 usuarios por grupo.</li>
-                                        <li>Apuesta variable por cada carrera.</li>
-                                        <li>Si aciertas: premio = puntos apostados x5.</li>
-                                        <li>Compra de puntos: 1000 puntos por 10.000 COP, sin limite.</li>
-                                    </ul>
-                                </article>
+                                <div class="subgrid">
+                                    <article class="glass-card elevated-card">
+                                        <span class="mini-label">Competencia interna</span>
+                                        <h2>Leaderboard</h2>
+                                        <div id="leaderboard" class="leaderboard-list"></div>
+                                    </article>
+
+                                    <article class="glass-card elevated-card">
+                                        <span class="mini-label">Actividad reciente</span>
+                                        <h2>Ultimas apuestas</h2>
+                                        <div id="betHistory" class="activity-list"></div>
+                                    </article>
+
+                                    <article class="glass-card elevated-card">
+                                        <span class="mini-label">Recargas</span>
+                                        <h2>Compras de puntos</h2>
+                                        <div id="purchaseHistory" class="activity-list"></div>
+                                    </article>
+
+                                    <article class="glass-card elevated-card">
+                                        <span class="mini-label">Reglas de negocio</span>
+                                        <h2>Condiciones operativas</h2>
+                                        <ul class="clean-list clean-list-wide">
+                                            <li>Registro con 1000 puntos iniciales por usuario.</li>
+                                            <li>Capacidad maxima: 4 grupos de 4 personas.</li>
+                                            <li>Apuesta minima de 10 puntos con valor variable.</li>
+                                            <li>Premio de 5 veces el valor apostado si el caballo gana.</li>
+                                            <li>Compra ilimitada de paquetes de 1000 puntos por 10.000 COP.</li>
+                                        </ul>
+                                    </article>
+                                </div>
                             </section>
                         </main>
                     </div>

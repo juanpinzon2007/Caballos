@@ -68,4 +68,32 @@ public class ApuestaEntity {
     public Long getId() {
         return id;
     }
+
+    public String getCaballoElegido() {
+        return caballoElegido;
+    }
+
+    public Integer getPuntosApostados() {
+        return puntosApostados;
+    }
+
+    public String getCaballoGanador() {
+        return caballoGanador;
+    }
+
+    public Boolean getGano() {
+        return gano;
+    }
+
+    public Integer getPremio() {
+        return premio;
+    }
+
+    public Integer getSaldoDespues() {
+        return saldoDespues;
+    }
+
+    public LocalDateTime getFecha() {
+        return fecha;
+    }
 }

@@ -1,11 +1,19 @@
 package com.example.caballos.service;
 
+import com.example.caballos.dto.ActividadApuestaResponse;
+import com.example.caballos.dto.ActividadCompraResponse;
 import com.example.caballos.dto.CompraPuntosResponse;
+import com.example.caballos.dto.DashboardResponse;
+import com.example.caballos.dto.GrupoEstadoResponse;
+import com.example.caballos.dto.PlataformaResponse;
+import com.example.caballos.dto.RankingUsuarioResponse;
 import com.example.caballos.dto.UsuarioResponse;
+import com.example.caballos.entity.ApuestaEntity;
 import com.example.caballos.entity.CompraPuntosEntity;
 import com.example.caballos.entity.GrupoEntity;
 import com.example.caballos.entity.UsuarioEntity;
 import com.example.caballos.exception.ReglaNegocioException;
+import com.example.caballos.repository.ApuestaRepository;
 import com.example.caballos.repository.CompraPuntosRepository;
 import com.example.caballos.repository.GrupoRepository;
 import com.example.caballos.repository.UsuarioRepository;
@@ -18,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UsuarioService {
@@ -27,18 +36,22 @@ public class UsuarioService {
     public static final int MAX_USUARIOS_POR_GRUPO = 4;
     public static final int PUNTOS_POR_PAQUETE = 1000;
     public static final int COSTO_POR_PAQUETE = 10_000;
+    public static final int MULTIPLICADOR_GANANCIA = 5;
 
     private final UsuarioRepository usuarioRepository;
     private final GrupoRepository grupoRepository;
     private final CompraPuntosRepository compraPuntosRepository;
+    private final ApuestaRepository apuestaRepository;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public UsuarioService(UsuarioRepository usuarioRepository,
                           GrupoRepository grupoRepository,
-                          CompraPuntosRepository compraPuntosRepository) {
+                          CompraPuntosRepository compraPuntosRepository,
+                          ApuestaRepository apuestaRepository) {
         this.usuarioRepository = usuarioRepository;
         this.grupoRepository = grupoRepository;
         this.compraPuntosRepository = compraPuntosRepository;
+        this.apuestaRepository = apuestaRepository;
     }
 
     @PostConstruct
@@ -80,6 +93,26 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public UsuarioResponse obtenerPerfil(UsuarioEntity usuario) {
         return mapUsuario(usuario);
+    }
+
+    @Transactional(readOnly = true)
+    public DashboardResponse obtenerDashboard(UsuarioEntity usuario) {
+        return new DashboardResponse(
+                mapUsuario(usuario),
+                construirPlataforma(),
+                obtenerRanking(),
+                apuestaRepository.findTop6ByUsuarioOrderByFechaDesc(usuario).stream()
+                        .map(this::mapApuesta)
+                        .toList(),
+                compraPuntosRepository.findTop6ByUsuarioOrderByFechaDesc(usuario).stream()
+                        .map(this::mapCompra)
+                        .toList()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public PlataformaResponse obtenerEstadoPlataforma() {
+        return construirPlataforma();
     }
 
     @Transactional
@@ -134,6 +167,18 @@ public class UsuarioService {
                 .orElseThrow(() -> new ReglaNegocioException("Usuario no encontrado"));
     }
 
+    @Transactional(readOnly = true)
+    public List<RankingUsuarioResponse> obtenerRanking() {
+        return usuarioRepository.findTop8ByOrderByPuntosDescNombreAsc().stream()
+                .map(usuario -> new RankingUsuarioResponse(
+                        usuario.getId(),
+                        usuario.getNombre(),
+                        usuario.getPuntos(),
+                        usuario.getGrupo().getNumero()
+                ))
+                .collect(Collectors.toList());
+    }
+
     private GrupoEntity obtenerGrupoDisponible() {
         List<GrupoEntity> grupos = grupoRepository.findAll();
         grupos.sort(Comparator.comparing(GrupoEntity::getNumero));
@@ -177,6 +222,60 @@ public class UsuarioService {
                 usuario.getNombre(),
                 usuario.getPuntos(),
                 usuario.getGrupo().getNumero()
+        );
+    }
+
+    private PlataformaResponse construirPlataforma() {
+        List<GrupoEntity> grupos = grupoRepository.findAll().stream()
+                .sorted(Comparator.comparing(GrupoEntity::getNumero))
+                .toList();
+
+        int usuariosRegistrados = (int) usuarioRepository.count();
+        int capacidadMaxima = MAX_GRUPOS * MAX_USUARIOS_POR_GRUPO;
+
+        List<GrupoEstadoResponse> estadoGrupos = grupos.stream()
+                .map(grupo -> {
+                    int ocupacion = (int) usuarioRepository.countByGrupo(grupo);
+                    return new GrupoEstadoResponse(
+                            grupo.getNumero(),
+                            ocupacion,
+                            MAX_USUARIOS_POR_GRUPO,
+                            ocupacion >= MAX_USUARIOS_POR_GRUPO
+                    );
+                })
+                .toList();
+
+        return new PlataformaResponse(
+                usuariosRegistrados,
+                capacidadMaxima,
+                Math.max(capacidadMaxima - usuariosRegistrados, 0),
+                PUNTOS_INICIALES,
+                PUNTOS_POR_PAQUETE,
+                COSTO_POR_PAQUETE,
+                MULTIPLICADOR_GANANCIA,
+                estadoGrupos
+        );
+    }
+
+    private ActividadApuestaResponse mapApuesta(ApuestaEntity apuesta) {
+        return new ActividadApuestaResponse(
+                apuesta.getCaballoElegido(),
+                apuesta.getCaballoGanador(),
+                apuesta.getPuntosApostados(),
+                apuesta.getGano(),
+                apuesta.getPremio(),
+                apuesta.getSaldoDespues(),
+                apuesta.getFecha()
+        );
+    }
+
+    private ActividadCompraResponse mapCompra(CompraPuntosEntity compra) {
+        return new ActividadCompraResponse(
+                compra.getPaquetes(),
+                compra.getPuntosOtorgados(),
+                compra.getCostoPesos(),
+                compra.getSaldoDespues(),
+                compra.getFecha()
         );
     }
 }
